@@ -1,8 +1,5 @@
 package yugioh.model;
 
-/**
- * Clase que representa una carta del juego.
- */
 public class Card {
     private String name;
     private int atk;
@@ -20,9 +17,4 @@ public class Card {
     public int getAtk() { return atk; }
     public int getDef() { return def; }
     public String getImageUrl() { return imageUrl; }
-
-    @Override
-    public String toString() {
-        return name + " (ATK: " + atk + ", DEF: " + def + ")";
-    }
 }

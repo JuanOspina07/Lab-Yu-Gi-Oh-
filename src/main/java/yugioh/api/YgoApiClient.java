@@ -9,22 +9,16 @@ import org.json.JSONObject;
 import org.json.JSONArray;
 
 public class YgoApiClient {
-    private static final String RANDOM_CARD_URL = "https://db.ygoprodeck.com/api/v7/randomcard.php";
+    private static final String Api_cartas = "https://db.ygoprodeck.com/api/v7/randomcard.php";
     private HttpClient client;
 
     public YgoApiClient() {
-        this.client = HttpClient.newBuilder()
-                .followRedirects(HttpClient.Redirect.ALWAYS)
-                .build();
+        this.client = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.ALWAYS).build();
     }
 
-    public Card getRandomMonsterCard() throws Exception {
+    public Card obtenerCarta() throws Exception {
         while (true) {
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(RANDOM_CARD_URL))
-                    .GET()
-                    .build();
-
+            HttpRequest request = HttpRequest.newBuilder().uri(URI.create(Api_cartas)).GET().build();
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
             System.out.println("Código HTTP: " + response.statusCode());
@@ -37,14 +31,14 @@ public class YgoApiClient {
                 continue;
             }
 
-            // 👉 Parsear JSON con array "data"
+            //JSON con array "data"
             JSONObject json = new JSONObject(response.body());
             JSONArray dataArray = json.getJSONArray("data");
             JSONObject cardJson = dataArray.getJSONObject(0);
 
             String type = cardJson.optString("type");
 
-            if (type.toLowerCase().contains("monster")) {
+            if (type.contains("Monster")) {
                 String name = cardJson.getString("name");
                 int atk = cardJson.optInt("atk", 0);
                 int def = cardJson.optInt("def", 0);

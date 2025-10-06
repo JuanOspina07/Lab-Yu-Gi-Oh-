@@ -1,57 +1,79 @@
 package yugioh.logic;
 
-import yugioh.api.YgoApiClient;
 import yugioh.model.Card;
+import java.util.*;
 
-/**
- * Clase que maneja la lógica de un duelo simple al mejor de 3 rondas.
- */
 public class Duel {
-    private YgoApiClient api;
+    private List<Card> playerCards;
+    private List<Card> aiCards;
+    private int playerScore = 0;
+    private int aiScore = 0;
     private BattleListener listener;
-    private int playerScore;
-    private int aiScore;
+    private Random random = new Random();
 
-    public Duel(YgoApiClient api, BattleListener listener) {
-        this.api = api;
+    public Duel(List<Card> playerCards, List<Card> aiCards, BattleListener listener) {
+        this.playerCards = new ArrayList<>(playerCards);
+        this.aiCards = new ArrayList<>(aiCards);
         this.listener = listener;
-        this.playerScore = 0;
-        this.aiScore = 0;
     }
 
-    /**
-     * Inicia un duelo al mejor de 3 rondas.
-     */
-    public void startBestOfThree() throws Exception {
-        while (playerScore < 2 && aiScore < 2) {
-            playRound();
-        }
-
-        String winner = (playerScore == 2) ? "Jugador" : "CPU";
-        listener.onDuelEnded(winner);
+    public boolean isFinished() {
+        return playerScore == 2 || aiScore == 2;
     }
 
-    /**
-     * Juega una sola ronda: jugador vs CPU con cartas aleatorias.
-     */
-    private void playRound() throws Exception {
-        Card playerCard = api.getRandomMonsterCard();
-        Card aiCard = api.getRandomMonsterCard();
+    public void playTurn(Card playerChoice, boolean playerAttackMode) {
+        if (isFinished()) return;
 
-        String roundWinner;
+        // Máquina elige carta y modo aleatorio
+        Card aiChoice = aiCards.get(random.nextInt(aiCards.size()));
+        boolean aiAttackMode = random.nextBoolean();
 
-        if (playerCard.getAtk() > aiCard.getAtk()) {
-            playerScore++;
-            roundWinner = "Jugador";
-        } else if (playerCard.getAtk() < aiCard.getAtk()) {
-            aiScore++;
-            roundWinner = "CPU";
+        String modoJugador = playerAttackMode ? "ATAQUE" : "DEFENSA";
+        String modoCPU = aiAttackMode ? "ATAQUE" : "DEFENSA";
+
+        String winner;
+
+        //Si ambos están en defensa seria empate
+        if (!playerAttackMode && !aiAttackMode) {
+            winner = "Empate";
         } else {
-            roundWinner = "Empate";
+            // Lógica de combate normal
+            int valorJugador = playerAttackMode ? playerChoice.getAtk() : playerChoice.getDef();
+            int valorCPU = aiAttackMode ? aiChoice.getAtk() : aiChoice.getDef();
+
+            if (valorJugador > valorCPU) {
+                playerScore++;
+                winner = "Jugador";
+            } else if (valorJugador < valorCPU) {
+                aiScore++;
+                winner = "CPU";
+            } else {
+                winner = "Empate";
+            }
         }
 
-        // Notificar eventos al listener
-        listener.onTurn(playerCard.toString(), aiCard.toString(), roundWinner);
-        listener.onScoreChanged(playerScore, aiScore);
+        // Notificar resultado del turno
+        listener.turno(
+                playerChoice.getName() + " (" + modoJugador + ")",
+                aiChoice.getName() + " (" + modoCPU + ")",
+                winner
+        );
+
+        listener.puntuacion(playerScore, aiScore);
+
+        if (isFinished()) {
+            String duelWinner = (playerScore > aiScore) ? "Jugador" : "CPU";
+            listener.ganador(duelWinner);
+        }
+    }
+
+
+
+    public int getPlayerScore() {
+        return playerScore;
+    }
+
+    public int getAiScore() {
+        return aiScore;
     }
 }
